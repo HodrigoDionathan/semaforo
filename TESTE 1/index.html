@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semáforo com Temporizador e Veículo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(to bottom, #1e3c72, #2a5298);
+    }
+    h1 {
+      color: white;
+      margin: 0;
+      font-size: 2rem;
+      text-transform: uppercase;
+    }
+    h2 {
+      color: #ccc;
+      margin: 5px 0 20px;
+      font-size: 1.2rem;
+      font-weight: normal;
+      text-align: center;
+      max-width: 80%;
+    }
+    p {
+      color: #ccc;
+      text-align: center;
+      font-size: 1rem;
+      max-width: 80%;
+    }
+    .container {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+    }
+    .lights-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 20px;
+      border: 5px solid white;
+      border-radius: 15px;
+      background-color: #333;
+      width: 100px;
+      height: 300px;
+      justify-content: center;
+      align-items: center;
+    }
+    .light {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: gray;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      transition: background-color 0.5s, box-shadow 0.5s;
+    }
+    .light.green {
+      background: #0f0;
+      box-shadow: 0 0 20px #0f0;
+    }
+    .light.yellow {
+      background: #ff0;
+      box-shadow: 0 0 20px #ff0;
+    }
+    .light.red {
+      background: #f00;
+      box-shadow: 0 0 20px #f00;
+    }
+    .ladder {
+      color: white;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      width: 350px;
+      height: 300px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .ladder span {
+      display: block;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    /* Veículo em movimento */
+    .vehicle {
+      width: 100px;
+      height: 50px;
+      background-image: url('https://via.placeholder.com/100x50.png'); /* Substitua com a URL da imagem do carro */
+      background-size: cover;
+      border-radius: 10px;
+      position: absolute;
+      bottom: 20px;
+      transition: left 2s linear; /* Velocidade normal */
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulação de Semáforo</h1>
+  <h2>Comandos em Ladder e Temporizador Semáforo.</h2>
+  <p>
+    Um comando acende a lâmpada verde após 5 segundos pisca por 4 vezes e apaga <a>a verde e acende a amarela após alguns segundos pisca 4 vezes e 
+    apaga a amarela e acende a vermelha e após mais 5 segundos pisca 4 vezes apaga a vermelha e reabilita a verde.
+  </p>
+
+  <div class="container">
+    <div class="lights-container">
+      <div id="green" class="light"></div>
+      <div id="yellow" class="light"></div>
+      <div id="red" class="light"></div>
+    </div>
+    <div id="ladder-display" class="ladder">
+      <span>Iniciando semáforo...</span>
+    </div>
+  </div>
+
+  <!-- Carros -->
+  <div id="vehicles-container"></div>
+
+  <script>
+    // Seleciona os elementos das luzes e o painel de exibição Ladder
+    const greenLight = document.getElementById("green");
+    const yellowLight = document.getElementById("yellow");
+    const redLight = document.getElementById("red");
+    const ladderDisplay = document.getElementById("ladder-display");
+    const vehiclesContainer = document.getElementById("vehicles-container");
+
+    // Função para criar carros
+    function createVehicle() {
+      const vehicle = document.createElement("div");
+      vehicle.classList.add("vehicle");
+      vehiclesContainer.appendChild(vehicle);
+      vehicle.style.left = '100vw'; // Começa fora da tela (do lado direito)
+      return vehicle;
+    }
+
+    // Função para mover os carros para a esquerda até o semáforo
+    function moveVehicles() {
+      const vehicles = document.querySelectorAll(".vehicle");
+      vehicles.forEach(vehicle => {
+        vehicle.style.transition = 'left 5s linear'; // Velocidade constante de movimento
+        vehicle.style.left = '50vw'; // Posição final (meio da tela, embaixo do semáforo)
+      });
+    }
+
+    // Função para mover os carros para a direita (simulando o movimento após o sinal verde)
+    function moveVehiclesRight() {
+      const vehicles = document.querySelectorAll(".vehicle");
+      vehicles.forEach(vehicle => {
+        vehicle.style.transition = 'left 5s linear'; // Velocidade constante de movimento
+        vehicle.style.left = '100vw'; // Move para a borda direita da tela
+      });
+    }
+
+    // Função para remover os carros
+    function removeVehicles() {
+      const vehicles = document.querySelectorAll(".vehicle");
+      vehicles.forEach(vehicle => {
+        vehicle.remove(); // Remove o carro da tela
+      });
+    }
+
+    // Cria 10 carros
+    for (let i = 0; i < 10; i++) {
+      createVehicle();
+    }
+
+    // Reseta todas as luzes para o estado "apagado"
+    function resetLights() {
+      greenLight.classList.remove("green");
+      yellowLight.classList.remove("yellow");
+      redLight.classList.remove("red");
+    }
+
+    // Atualiza o painel Ladder com o temporizador
+    function updateLadderDisplay(light, remainingTime) {
+      const command = `
+LADDER: ${light.toUpperCase()} 
+----[ ]----( Y )
+
+TEMPORIZADOR: ${remainingTime}s`;
+      ladderDisplay.innerHTML = `<span>${command}</span>`;
+    }
+
+    // Função genérica para fazer uma luz piscar antes de apagar
+    function blinkLight(lightElement, colorClass, lightName, callback) {
+      let blinkCount = 0;
+      const interval = setInterval(() => {
+        lightElement.classList.toggle(colorClass); // Alterna entre aceso/apagado
+        updateLadderDisplay(lightName, `Pisca ${(blinkCount / 2) + 1}/4`);
+        blinkCount++;
+        if (blinkCount >= 8) { // 4 piscadas (on/off = 2 ciclos por piscada)
+          clearInterval(interval); // Para o intervalo após 4 piscadas
+          lightElement.classList.remove(colorClass); // Garante que a luz apague
+          callback(); // Executa o próximo passo no ciclo
+        }
+      }, 500); // Duração de cada piscada (500ms)
+    }
+
+    // Ciclo infinito do semáforo
+    function startTrafficLight() {
+      let currentLight = "green";
+      let remainingTime = 5;
+
+      // Alterna as luzes no semáforo
+      function changeLights() {
+        if (currentLight === "green") {
+          remainingTime = 5;
+          const interval = setInterval(() => {
+            updateLadderDisplay("GRA1 - Verde", remainingTime);
+            remainingTime--;
+            if (remainingTime < 0) {
+              clearInterval(interval);
+              blinkLight(greenLight, "green", "GRA1 - Verde", () => {
+                yellowLight.classList.add("yellow");
+                currentLight = "yellow";
+                removeVehicles(); // Remove os veículos quando ficar verde
+                changeLights();
+              });
+            }
+          }, 1000);
+        } else if (currentLight === "yellow") {
+          remainingTime = 5;
+          const interval = setInterval(() => {
+            updateLadderDisplay("GRA2 - Amarelo", remainingTime);
+            remainingTime--;
+            if (remainingTime < 0) {
+              clearInterval(interval);
+              blinkLight(yellowLight, "yellow", "GRA2 - Amarelo", () => {
+                redLight.classList.add("red");
+                currentLight = "red";
+                removeVehicles(); // Remove os veículos quando ficar amarelo
+                changeLights();
+              });
+            }
+          }, 1000);
+        } else if (currentLight === "red") {
+          remainingTime = 5;
+          const interval = setInterval(() => {
+            updateLadderDisplay("GRA3 - Vermelho", remainingTime);
+            remainingTime--;
+            if (remainingTime < 0) {
+              clearInterval(interval);
+              blinkLight(redLight, "red", "GRA3 - Vermelho", () => {
+                greenLight.classList.add("green");
+                currentLight = "green";
+                moveVehicles(); // Move os veículos quando ficar verde
+                changeLights();
+              });
+            }
+          }, 1000);
+        }
+      }
+      changeLights();
+    }
+
+    // Inicia o ciclo do semáforo
+    startTrafficLight();
+  </script>
+</body>
+</html>
